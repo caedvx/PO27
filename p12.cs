@@ -25,6 +25,7 @@ for (int i = 0; i < stateQueue.Count; i++)
     if (endState.beat == beats)
     {
         Console.WriteLine(endState.moves);
+        break;
     }
 }
 
@@ -36,34 +37,46 @@ for (int i = 0; i < stateQueue.Count; i++)
         {
             stateQueue.Add((beatMoves[state.beats].move1, state.rfp, state.moves + 1, state.beats + 1));
             stateQueue.Add((state.lfp, beatMoves[state.beats].move1, state.moves + 1, state.beats + 1));
+            return (state.beats + 1, state.moves + 1);
+        }
+        else
+        {
+            stateQueue.Add((state.lfp, state.rfp, state.moves, state.beats + 1));
+            return (state.beats + 1, state.moves);
         }
     }
     else
     {
         if (beatMoves[state.beats].move1 != state.rfp && beatMoves[state.beats].move2 != state.lfp && beatMoves[state.beats].move1 != state.lfp && beatMoves[state.beats].move2 != state.rfp)
         {
-            stateQueue.Add((beatMoves[state.beats].move1, beatMoves[state.beats].move2, state.moves + 1, state.beats + 1));
-            stateQueue.Add((beatMoves[state.beats].move2, beatMoves[state.beats].move1, state.moves + 1, state.beats + 1));
+            stateQueue.Add((beatMoves[state.beats].move1, beatMoves[state.beats].move2, state.moves + 2, state.beats + 1));
+            stateQueue.Add((beatMoves[state.beats].move2, beatMoves[state.beats].move1, state.moves + 2, state.beats + 1));
+            return (state.beats + 1, state.moves + 2);
         }
         else if (beatMoves[state.beats].move1 == state.rfp && beatMoves[state.beats].move2 != state.lfp)
         {
             stateQueue.Add((beatMoves[state.beats].move2, state.rfp, state.moves + 1, state.beats + 1));
+            return (state.beats + 1, state.moves + 1);
         }
         else if  (beatMoves[state.beats].move1 == state.lfp && beatMoves[state.beats].move2 != state.rfp)
         {
             stateQueue.Add((state.lfp, beatMoves[state.beats].move2, state.moves + 1, state.beats + 1));
+            return (state.beats + 1, state.moves + 1);
         }
         else if (beatMoves[state.beats].move2 == state.rfp && beatMoves[state.beats].move1 != state.lfp)
         {
             stateQueue.Add((beatMoves[state.beats].move1, state.rfp, state.moves + 1, state.beats + 1));
+            return (state.beats + 1, state.moves + 1);
         }
         else if  (beatMoves[state.beats].move2 == state.lfp && beatMoves[state.beats].move1 != state.rfp)
         {
             stateQueue.Add((state.lfp, beatMoves[state.beats].move1, state.moves + 1, state.beats + 1));
+            return (state.beats + 1, state.moves + 1);
         }
         else
         {
             stateQueue.Add((state.lfp, state.rfp, state.moves, state.beats + 1));
+            return (state.beats + 1, state.moves);
         }
     }
 }
