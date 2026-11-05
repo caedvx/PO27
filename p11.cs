@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 int[] rc = Console.ReadLine()
@@ -14,88 +15,73 @@ for (int i = 0; i < r; i++)
     map[i] = Console.ReadLine().ToCharArray();
 }
 
-// TODO 7: created as [r, c] = [row, column], but used below as [x, y] = [column, row]. Crashes on non-square rinks.
-// TODO 8: a state is (cell, direction). Should this track direction too? And which cells need marking: every cell slid over, or only where she stops?
-bool[,] visited = new bool[r,c];
-visited[0,0] = true;
+bool[,,] visited = new bool[c, r, 4];
 
-// TODO 1: List needs a using that's missing up top. Which one did p13 use?
-// TODO 11: counting turns: what if the tuple had a fourth number?
-List<(int x, int y, int dir)> stateQueue = new List<(int, int, int)>();
+List<(int x, int y, int dir, int turns)> stateQueue = new List<(int, int, int, int)>();
+stateQueue.Add((0, 0, 2, 0));
 
-// TODO 6: queue starts empty, so this loop never runs. What has to be in it first?
 for (int i = 0; i < stateQueue.Count; i++)
 {
-    // TODO 2: Glide takes 3 separate ints, this passes one tuple.
-    Glide(stateQueue[i]);
-    // TODO 3: x and dir only exist inside Glide.
-    if (x == c && dir == 2) break;
-}
-//Gotta figure out the counting but gotta sleep for now
-
-// OPTIONAL: cases 1-4 are the same code with different directions. dRow/dCol arrays would make them one block,
-// so TODOs 8-10 get fixed once instead of four times.
-void Glide(int x, int y, int dir)
-{
-    switch (dir)
+    (int x, int y, int dir, int turns) endState = Glide(stateQueue[i].x, stateQueue[i].y, stateQueue[i].dir, stateQueue[i].turns);
+    
+    if (endState.x == c - 1 && endState.dir == 2) 
     {
-        // TODO 4: every case must end with break or return, no falling into the next case.
+        Console.WriteLine(endState.turns); 
+        break;
+    }
+}
+
+(int x, int y, int dir)? NextCoordinates(int column, int row, int dir)
+{
+    switch(dir % 4)
+    {
         case 1:
-            // TODO 10: this loop stops for two reasons: hit '#', or reached the edge. Only '#' allows a turn.
-            // North/south/west edge = skated off = dead end. East edge = goal.
-            while (y > 0 && map[y - 1][x] =='.')
-            {
-                y--;
-                visited[x,y] = true;
-            }
-            // TODO 9: what does [x + 1] / [x - 1] do on the last / first column? (same in every case below)
-            if (!visited[x + 1, y] && map[y][x + 1] == '.')
-                // TODO 5: Add takes one item, here a tuple. How is a tuple written in brackets?
-                stateQueue.Add(x,y, 2);
-            if (!visited[x - 1, y] && map[y][x - 1] == '.')
-                stateQueue.Add(x,y, 4);
+        if (row > 0) return (column, row - 1, dir);
+        break;
 
         case 2:
-            while (x < c - 1 && map[y][x+1] == '.')
-            {
-                x++;
-                visited[x,y] = true;
-            }
-            // TODO 10: the while above stops at c - 1, so x == c is never true.
-            if (x == c)
-            {
-                
-            }
-            if (!visited[x, y + 1] && map[y + 1][x] == '.')
-            {
-                stateQueue.Add(x,y, 3);
-            } 
-            if (!visited[x, y - 1] && map[y - 1][x] == '.')
-            {
-                stateQueue.Add(x,y, 1);
-            }
-
+        if (column < c - 1) return (column + 1, row, dir);
+        break;
+        
         case 3:
-            while (y < r - 1 && map[y + 1][x] == '.')
-            {
-                y++;
-                visited[x,y] = true;
-            }
-            if (!visited[x + 1, y] && map[y][x + 1] == '.')
-                stateQueue.Add(x,y, 2);
-            if (!visited[x - 1, y] && map[y][x - 1] == '.')
-                stateQueue.Add(x,y, 4);
-
-        case 4:
-            while (x > 0 && map[y][x-1] == '.')
-            {
-                x--;
-                visited[x,y] = true;
-            }
-            if (!visited[x, y + 1] && map[y + 1][x] == '.')
-                stateQueue.Add(x,y, 3);
-            if (!visited[x, y - 1] && map[y - 1][x] == '.')
-                stateQueue.Add(x,y, 1);    
+        if (row < r - 1) return (column, row + 1, dir);
+        break;
+        
+        case 0:
+        if (column > 0) return (column - 1, row, dir);
+        break;
     }
+    return null;
+}
 
+(int x, int y, int dir, int turns) Glide(int x, int y, int dir, int turns)
+{
+    while (NextCoordinates(x, y, dir) is (int nextX, int nextY, int nextDir) newCoords)
+    {
+        if (visited[x, y, dir]) break;
+        if (map[nextY][nextX] != '.')
+        {
+            visited[x, y, dir] = true;
+            if (NextCoordinates(x, y, (dir + 3) % 4) != null)
+            {
+                (int x, int y, int dir) turnLeft = NextCoordinates(x, y, (dir + 3) % 4).Value;
+                if (!visited[turnLeft.x, turnLeft.y, turnLeft.dir] && map[turnLeft.y][turnLeft.x] == '.')
+                {
+                    stateQueue.Add((turnLeft.x, turnLeft.y, turnLeft.dir, turns + 1));
+                }
+            }
+            if (NextCoordinates(x, y, (dir + 1) % 4) != null)
+            {
+                (int x, int y, int dir) turnRight = NextCoordinates(x, y, (dir + 1) % 4).Value;
+                if (!visited[turnRight.x, turnRight.y, turnRight.dir] && map[turnRight.y][turnRight.x] == '.')
+                {
+                    stateQueue.Add((turnRight.x, turnRight.y, turnRight.dir, turns + 1));
+                }
+            }
+            return (x, y, dir, turns);
+        }
+        x = nextX;
+        y = nextY;
+    }
+    return (x, y, dir, turns);
 }
